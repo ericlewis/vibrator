@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+
+      - name: Create virtual environment
+        run: uv venv
+
+      - name: Restore sentence-transformers cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/torch/sentence_transformers
+            ~/.cache/huggingface
+          key: ${{ runner.os }}-st-cache-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-st-cache-
+
+      - name: Install dependencies
+        run: uv pip install -r requirements.txt
+
+      - name: Run pytest
+        run: uv run pytest

@@ -1,0 +1,43 @@
+{
+  "slider_texts": {
+    "professional": "The user is motivated by professional growth and productivity.",
+    "personal": "The user seeks supportive, empathetic conversations.",
+    "playful": "The user enjoys witty, humorous banter."
+  },
+  "actions": [
+    {
+      "action_type": "write",
+      "content": "Need help navigating a high-stakes product review",
+      "weight": 1.3,
+      "metadata": {
+        "age_hours": 4.0
+      }
+    },
+    {
+      "action_type": "read",
+      "content": "Read an article on team retrospectives",
+      "weight": 0.9,
+      "metadata": {
+        "age_hours": 2.5
+      }
+    },
+    {
+      "action_type": "react",
+      "content": "Reacted with fire emoji to a motivational quote",
+      "weight": 0.7,
+      "metadata": {
+        "age_hours": 6.0
+      }
+    }
+  ],
+  "item": "Five tips to keep roadmap reviews focused",
+  "context": {
+    "segment": "regression",
+    "is_work_hours": true
+  },
+  "expected_probabilities": {
+    "professional": 0.714249,
+    "personal": 0.712509,
+    "playful": 0.710552
+  }
+}
