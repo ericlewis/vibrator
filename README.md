@@ -114,6 +114,18 @@ actions = sample_recent_chat_actions(
 
 See `examples/chat_sampling.py` for a full end-to-end walkthrough that scores a new content item using a recent chat transcript.
 
+### Chat room matchmaking
+
+`examples/chat_room_matchmaking.py` shows how to pair a member with the best-fit chat room using the slider pipeline:
+
+- **Define intent sliders** – describe what each room optimizes for (strategy, brainstorm, support, deep focus). These descriptions are embedded once and reused.
+- **Sample recent chats** – grab the latest user turns with `sample_recent_chat_actions`, which automatically decays older messages, stores `age_hours`, and tags metadata so recency becomes part of the feature set.
+- **Tune context weights** – pass a segment such as `after_hours` to `SliderScorer` so features like `recency` and `user_item_alignment` get reweighted before normalization.
+- **Score every room** – run `scorer.score(sampled_actions, room_pitch, context=context)` for each candidate room. The scorer returns the feature breakdown and calibrated probability per slider.
+- **Rank and explain** – average the slider probabilities for a room, surface the strongest slider (e.g., “support”), and inspect the feature contributions to explain why that room works.
+
+Running the script prints a sorted list of rooms with average match confidence, the top slider driving the match, and the underlying feature values so you can plug the result straight into routing or transparency tooling.
+
 ### Data formats
 
 #### User actions (CSV)
