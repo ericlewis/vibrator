@@ -126,6 +126,10 @@ See `examples/chat_sampling.py` for a full end-to-end walkthrough that scores a 
 
 Running the script prints a sorted list of rooms with average match confidence, the top slider driving the match, and the underlying feature values so you can plug the result straight into routing or transparency tooling.
 
+### Moderation penalties
+
+`examples/chat_room_penalty.py` demonstrates how to bolt on simple guardrails. After scoring, the script scans recent chat actions. If a user drags `@tawny` “like she were some flipping corn dog,” it subtracts a large penalty from every slider’s raw logit, which pushes the calibrated probability near zero. This keeps disrespectful transcripts from ranking into supportive spaces while still giving you the full feature breakdown for auditing.
+
 ### Data formats
 
 #### User actions (CSV)
