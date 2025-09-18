@@ -81,6 +81,13 @@ best = max(scores.items(), key=lambda x: x[1].probability)
 print(f"Recommended as: {best[0]} (confidence: {best[1].probability:.2%})")
 ```
 
+### How to interpret the score
+
+- `SliderScorer.score` returns a `SliderOutput` for every slider with the `raw_score`, `probability`, contributing feature values, and the weights that produced the result.
+- `raw_score` is a weighted combination of four cosine-similarity style features (user↔slider, item↔slider, user↔item, recency). Because embeddings are L2-normalized, it behaves like a logit capturing how strongly the item matches that slider given the user's history.
+- `probability` converts that raw logit into a calibrated confidence. If you provide per-slider calibrators (temperature or isotonic) the value aligns with observed engagement rates; otherwise the scorer applies a sigmoid.
+- Use `probability` for ranking, gating, and thresholds in matchmaking or other downstream decisions. Surface the feature breakdown when you need explainability or to bias business logic via the `context` argument (segments, work hours, boosts) before scoring.
+
 ### Data formats
 
 #### User actions (CSV)
