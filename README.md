@@ -100,6 +100,7 @@ print(f"Recommended as: {best[0]} (confidence: {best[1].probability:.2%})")
 - **Confidence watchdog** – Log predictions + outcomes, fit calibrators via `TemperatureCalibrator`/`IsotonicCalibrator`, and monitor Brier scores to quantify how trustworthy your probabilities are.
 - **Fusion layers** – Combine multi-modal signals (chat + purchase + sensor data) by turning each into `UserAction`s with custom weights, then score interactive experiences that blend commerce, community, and gamified quests.
 - **Counterfactual testing** – Clone a user’s action set, tweak weights (e.g., boost `write` actions or remove toxic phrases), rerun scoring to see how matches shift before making policy changes.
+- **Self-adapting loop** – Log slider scores, contexts, and outcomes; auto-fit calibrators; mine fresh signals for new sliders or weight overrides; and guard the loop with metrics (Brier score, drift detectors, rollout gates) so the system keeps evolving safely.
 
 ### Data formats
 
