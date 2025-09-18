@@ -88,6 +88,32 @@ print(f"Recommended as: {best[0]} (confidence: {best[1].probability:.2%})")
 - `probability` converts that raw logit into a calibrated confidence. If you provide per-slider calibrators (temperature or isotonic) the value aligns with observed engagement rates; otherwise the scorer applies a sigmoid.
 - Use `probability` for ranking, gating, and thresholds in matchmaking or other downstream decisions. Surface the feature breakdown when you need explainability or to bias business logic via the `context` argument (segments, work hours, boosts) before scoring.
 
+### Chat transcripts
+
+Use `sample_recent_chat_actions` to turn the latest chat turns into `UserAction`s with recency-aware weights. This keeps the transcript lightweight for embedding while aligning with the scoring pipeline.
+
+```python
+from datetime import datetime, timedelta, timezone
+
+from vibrator import ChatMessage, sample_recent_chat_actions
+
+now = datetime.now(timezone.utc)
+transcript = [
+    ChatMessage("We need fun ideas for our study group tonight", now - timedelta(hours=2)),
+    ChatMessage("Also looking for ways to keep people accountable", now - timedelta(minutes=30)),
+]
+
+actions = sample_recent_chat_actions(
+    transcript,
+    now=now,
+    max_messages=2,
+    include_roles=("user",),
+    half_life_hours=3.0,
+)
+```
+
+See `examples/chat_sampling.py` for a full end-to-end walkthrough that scores a new content item using a recent chat transcript.
+
 ### Data formats
 
 #### User actions (CSV)

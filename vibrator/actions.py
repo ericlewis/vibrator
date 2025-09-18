@@ -11,6 +11,7 @@ DEFAULT_ACTION_PREFIXES: Mapping[str, str] = {
     "read": "User viewed:",
     "open": "User opened:",
     "share": "User shared:",
+    "chat": "User said:",
 }
 
 

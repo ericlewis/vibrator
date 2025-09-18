@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from .actions import UserAction
 from .calibration import IsotonicCalibrator, TemperatureCalibrator
+from .chat import ChatMessage, sample_recent_chat_actions
 from .pipeline import SliderOutput, SliderScorer
 
 if TYPE_CHECKING:  # pragma: no cover - only for static type checking
@@ -18,6 +19,8 @@ __all__ = [
     "SliderOutput",
     "TemperatureCalibrator",
     "IsotonicCalibrator",
+    "ChatMessage",
+    "sample_recent_chat_actions",
 ]
 
 
