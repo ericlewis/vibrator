@@ -130,6 +130,16 @@ Running the script prints a sorted list of rooms with average match confidence, 
 
 `examples/chat_room_penalty.py` demonstrates how to bolt on simple guardrails. After scoring, the script scans recent chat actions. If a user drags `@tawny` “like she were some flipping corn dog,” it subtracts a large penalty from every slider’s raw logit, which pushes the calibrated probability near zero. This keeps disrespectful transcripts from ranking into supportive spaces while still giving you the full feature breakdown for auditing.
 
+### Recipe personalization
+
+`examples/recipe_personalization.py` takes weeknight dinner feedback and ranks alternate recipe pitches:
+
+- **Flavor sliders** – heat, comfort, time-saving, and macro balance describe what the cook wants to dial up or down.
+- **Chat sampling** – recent DMs about spice tolerance, prep time, and protein goals are converted into weighted `UserAction`s.
+- **Context overrides** – marking the session as `weeknight` boosts features that reward low prep and recent feedback.
+- **Candidate scoring** – each recipe variant is scored; the example blends slider probabilities into a composite (35% macro, 30% spice, 20% comfort, 15% time saver).
+- **Outputs** – prints the strongest slider per recipe and raw probabilities so editors can tweak ingredient swaps or veggie add-ons before publishing.
+
 ### Data formats
 
 #### User actions (CSV)
