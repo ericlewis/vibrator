@@ -88,61 +88,18 @@ print(f"Recommended as: {best[0]} (confidence: {best[1].probability:.2%})")
 - `probability` converts that raw logit into a calibrated confidence. If you provide per-slider calibrators (temperature or isotonic) the value aligns with observed engagement rates; otherwise the scorer applies a sigmoid.
 - Use `probability` for ranking, gating, and thresholds in matchmaking or other downstream decisions. Surface the feature breakdown when you need explainability or to bias business logic via the `context` argument (segments, work hours, boosts) before scoring.
 
-### Chat transcripts
+### Usage ideas
 
-Use `sample_recent_chat_actions` to turn the latest chat turns into `UserAction`s with recency-aware weights. This keeps the transcript lightweight for embedding while aligning with the scoring pipeline.
-
-```python
-from datetime import datetime, timedelta, timezone
-
-from vibrator import ChatMessage, sample_recent_chat_actions
-
-now = datetime.now(timezone.utc)
-transcript = [
-    ChatMessage("We need fun ideas for our study group tonight", now - timedelta(hours=2)),
-    ChatMessage("Also looking for ways to keep people accountable", now - timedelta(minutes=30)),
-]
-
-actions = sample_recent_chat_actions(
-    transcript,
-    now=now,
-    max_messages=2,
-    include_roles=("user",),
-    half_life_hours=3.0,
-)
-```
-
-See `examples/chat_sampling.py` for a full end-to-end walkthrough that scores a new content item using a recent chat transcript.
-
-### Chat room matchmaking
-
-`examples/chat_room_matchmaking.py` shows how to pair a member with the best-fit chat room using the slider pipeline:
-
-- **Define intent sliders** – describe what each room optimizes for (strategy, brainstorm, support, deep focus). These descriptions are embedded once and reused.
-- **Sample recent chats** – grab the latest user turns with `sample_recent_chat_actions`, which automatically decays older messages, stores `age_hours`, and tags metadata so recency becomes part of the feature set.
-- **Tune context weights** – pass a segment such as `after_hours` to `SliderScorer` so features like `recency` and `user_item_alignment` get reweighted before normalization.
-- **Score every room** – run `scorer.score(sampled_actions, room_pitch, context=context)` for each candidate room. The scorer returns the feature breakdown and calibrated probability per slider.
-- **Rank and explain** – average the slider probabilities for a room, surface the strongest slider (e.g., “support”), and inspect the feature contributions to explain why that room works.
-
-Running the script prints a sorted list of rooms with average match confidence, the top slider driving the match, and the underlying feature values so you can plug the result straight into routing or transparency tooling.
-
-### Moderation penalties
-
-`examples/chat_room_penalty.py` demonstrates how to bolt on simple guardrails. After scoring, the script scans recent chat actions. If a user drags `@tawny` “like she were some flipping corn dog,” it subtracts a large penalty from every slider’s raw logit, which pushes the calibrated probability near zero. This keeps disrespectful transcripts from ranking into supportive spaces while still giving you the full feature breakdown for auditing.
-
-### Recipe personalization
-
-`examples/recipe_personalization.py` takes weeknight dinner feedback and ranks alternate recipe pitches:
-
-- **Flavor sliders** – heat, comfort, time-saving, and macro balance describe what the cook wants to dial up or down.
-- **Chat sampling** – recent DMs about spice tolerance, prep time, and protein goals are converted into weighted `UserAction`s.
-- **Context overrides** – marking the session as `weeknight` boosts features that reward low prep and recent feedback.
-- **Candidate scoring** – each recipe variant is scored; the example blends slider probabilities into a composite (35% macro, 30% spice, 20% comfort, 15% time saver).
-- **Outputs** – prints the strongest slider per recipe and raw probabilities so editors can tweak ingredient swaps or veggie add-ons before publishing.
-
-### Maximum weirdness
-
-Need reassurance the system handles chaos? `examples/weird_exotic_demo.py` matches a cosmic traveler with options like “Nebulae Karaoke Safari” and “Peacock Ombudsman Summit.” It leans on surreal sliders (void whispers, lava surfing, bureaucratic peacocks), applies lunar segment overrides, and even deducts points if a cursed “mayonnaise portal” shows up in the chat. Run it when you want proof the pipeline survives the strangest briefs product can throw at it.
+- **Chat transcripts** – Use `sample_recent_chat_actions` to roll the latest chat turns into weighted `UserAction`s so you can score content with recency baked in (`examples/chat_sampling.py`).
+- **Chat room matchmaking** – Match members to rooms by scoring each room’s pitch against sampled chats, plus context-sensitive feature overrides that reward fresh tone matches (`examples/chat_room_matchmaking.py`).
+- **Moderation penalties** – After scoring, scan actions for disallowed phrases and subtract a hefty penalty to bury the probability (e.g., the `@tawny` “corn dog” guardrail in `examples/chat_room_penalty.py`).
+- **Recipe personalization** – Blend slider probabilities into a composite to pick the best dinner tweak based on spice tolerance, macro goals, and prep constraints (`examples/recipe_personalization.py`).
+- **Cosmic weirdness** – Stress-test the pipeline with surreal sliders (void whispers, lava surfing) and cursed phrase penalties in `examples/weird_exotic_demo.py`.
+- **Day planning vibe meter** – Score possible calendar blocks against sliders like `deep_focus`, `social_energy`, or `recharge`, using your latest reflections as actions to choose an agenda that fits today’s aura.
+- **Aura profile smoothing** – Persist per-slider probabilities as a “vibe vector,” update it daily with new actions, and expose it across matchmaking, status badges, or moderation triage.
+- **Confidence watchdog** – Log predictions + outcomes, fit calibrators via `TemperatureCalibrator`/`IsotonicCalibrator`, and monitor Brier scores to quantify how trustworthy your probabilities are.
+- **Fusion layers** – Combine multi-modal signals (chat + purchase + sensor data) by turning each into `UserAction`s with custom weights, then score interactive experiences that blend commerce, community, and gamified quests.
+- **Counterfactual testing** – Clone a user’s action set, tweak weights (e.g., boost `write` actions or remove toxic phrases), rerun scoring to see how matches shift before making policy changes.
 
 ### Data formats
 
