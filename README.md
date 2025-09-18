@@ -140,6 +140,10 @@ Running the script prints a sorted list of rooms with average match confidence, 
 - **Candidate scoring** – each recipe variant is scored; the example blends slider probabilities into a composite (35% macro, 30% spice, 20% comfort, 15% time saver).
 - **Outputs** – prints the strongest slider per recipe and raw probabilities so editors can tweak ingredient swaps or veggie add-ons before publishing.
 
+### Maximum weirdness
+
+Need reassurance the system handles chaos? `examples/weird_exotic_demo.py` matches a cosmic traveler with options like “Nebulae Karaoke Safari” and “Peacock Ombudsman Summit.” It leans on surreal sliders (void whispers, lava surfing, bureaucratic peacocks), applies lunar segment overrides, and even deducts points if a cursed “mayonnaise portal” shows up in the chat. Run it when you want proof the pipeline survives the strangest briefs product can throw at it.
+
 ### Data formats
 
 #### User actions (CSV)
