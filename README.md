@@ -1,6 +1,6 @@
-# Vibrator personalization prototype
+# Vibrator
 
-A production-ready personalization system that matches user behavior with content using slider-based preference modeling. Vibrator uses state-of-the-art instructional embeddings to understand user actions (clicks, writes, reactions) and score content against customizable personality/preference dimensions.
+A personalization system that matches user behavior with content using slider-based preference modeling. Vibrator uses state-of-the-art instructional embeddings to understand user actions (clicks, writes, reactions) and score content against customizable personality/preference dimensions.
 
 ## What it does
 
