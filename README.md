@@ -286,3 +286,7 @@ The repository includes GitHub Actions for:
 - [VIBE: Topic-Driven Temporal Adaptation](https://arxiv.org/abs/2310.10191) - Inspiration for temporal adaptation design
 - [Instructor embeddings](https://instructor-embedding.github.io/) - Foundation model for encoding
 - [Calibration methods](https://scikit-learn.org/stable/modules/calibration.html) - Probability calibration techniques
+
+## License
+
+Licensed under the MIT License. See `LICENSE` for details.
