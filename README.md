@@ -18,6 +18,67 @@ Vibrator helps you build recommendation systems that:
 - **Context awareness**: Adjusts recommendations based on time-of-day, user segments, and custom rules
 - **Production ready**: Includes synthetic data generation, regression testing, and CI/CD setup
 
+## What is a slider?
+
+A slider is a named preference dimension described in natural language (a short prompt) that defines what “match” means along that axis.
+
+How it works at a glance:
+- Encoder embeds the slider text, the user’s profile (from actions), and the candidate item in the same space.
+- The scorer combines four features — user↔slider, item↔slider, user↔item, and recency — then calibrates to a per‑slider probability. See “How to interpret the score”.
+
+Anatomy of a slider:
+- **name**: stable identifier (e.g., `technical`, `beginner`, `creative`)
+- **description**: 1–12 words capturing intent (imperative, unambiguous)
+- optional **calibration/weights**: per‑slider tuning for trustworthy scores
+
+Examples:
+- `technical`: "Detailed technical documentation"
+- `beginner`: "Simple, step‑by‑step explanations"
+- `creative`: "Imaginative or unconventional content"
+
+Tips:
+- Start with 3–7 sliders; keep descriptions short and concrete.
+- Avoid overlapping meanings; split axes if needed (e.g., tone vs depth).
+- Cache slider embeddings for speed.
+
+### How to design good sliders
+
+- Use single‑intent phrasing; avoid conjunctions ("and", "or").
+- Keep descriptions concise (4–12 words) and action‑oriented.
+- Prefer orthogonal axes; minimize overlap between sliders.
+- Name sliders in your product’s language (user‑facing, stable identifiers).
+- Validate with small labeled sets (5–10 examples per slider) and iterate.
+- Monitor per‑slider calibration; add temperature/isotonic calibrators if needed.
+- Version sliders when meanings change; avoid silent redefinitions.
+
+### Anti-patterns
+
+- Vague or multi-intent descriptions (e.g., "technical and creative").
+- Overlapping sliders that measure the same concept under different names.
+- Hidden context or internal jargon the encoder cannot infer.
+- Long, paragraph-like descriptions; exceed ~12 words.
+- Redefining slider meanings without versioning and recalibration.
+- Sliders tied to sensitive or policy-violating attributes.
+
+### Examples: good vs bad
+
+Good (concise, single-intent, orthogonal):
+```json
+{
+  "sliders": {
+    "technical": "Detailed technical documentation",
+    "beginner": "Simple, step-by-step explanations",
+    "creative": "Imaginative or unconventional content"
+  }
+}
+```
+
+Bad (avoid these patterns):
+- "technical and creative" — multi-intent
+- "good content" — vague
+- "for power users at work on mobile" — hidden context
+- Very long paragraph — exceeds ~12 words, hard to embed consistently
+
 ## Quickstart
 
 ### Installation
@@ -71,7 +132,8 @@ actions = [
 
 # 3. Score content
 encoder = InstructionalEncoder()
-scorer = SliderScorer(encoder, sliders)
+slider_vectors = {name: encoder.encode_items([desc])[0] for name, desc in sliders.items()}
+scorer = SliderScorer(encoder, slider_vectors)
 
 content = "Advanced PostgreSQL query optimization techniques"
 scores = scorer.score(actions, content)
@@ -192,9 +254,9 @@ Content Text → Instructional Encoder → Content Embedding
 slider_vectors = encoder.encode_items(slider_texts)
 cache.set("sliders", slider_vectors, ttl=3600)
 
-# Batch processing
+# Batch processing (example)
 all_actions = load_batch_actions(user_ids)
-all_scores = scorer.score_batch(all_actions, content_items)
+all_scores = [scorer.score(actions, item) for actions, item in zip(all_actions, content_items)]
 ```
 
 ### Storage options
@@ -204,14 +266,18 @@ all_scores = scorer.score_batch(all_actions, content_items)
 
 ### Monitoring
 ```python
-# Track calibration drift
-from vibrator.calibration import calculate_brier_score
+# Track calibration drift (Brier score)
+import numpy as np
 
-actual_engagement = get_user_engagement(predictions)
-brier = calculate_brier_score(predictions, actual_engagement)
+# predictions: List[float] in [0,1], actual: List[int] 0/1
+actual = get_user_engagement(predictions)
+p = np.asarray(predictions, dtype=np.float32)
+y = np.asarray(actual, dtype=np.float32)
+brier = float(np.mean((p - y) ** 2))
 
 if brier > threshold:
-    recalibrate_model()
+    # Refit calibrators (TemperatureCalibrator / IsotonicCalibrator) or revisit features
+    pass
 ```
 
 ## Advanced usage
@@ -236,17 +302,7 @@ context = {
 scores = scorer.score(actions, content, context=context)
 ```
 
-### Fine-tuning embeddings
-```python
-# Train custom embeddings on your data
-from vibrator.training import fine_tune_encoder
 
-encoder = fine_tune_encoder(
-    base_model="instructor-base",
-    training_data=your_action_logs,
-    loss="triplet"  # or "contrastive"
-)
-```
 
 ## Testing
 
@@ -264,13 +320,13 @@ uv run pytest tests/test_pipeline.py
 uv run pytest --cov=vibrator
 ```
 
-## CI/CD
+## CI/CD (suggested)
 
-The repository includes GitHub Actions for:
-- Running tests on pull requests
-- Caching model downloads
-- Regression testing against fixtures
-- Tracking calibration drift
+Recommended tasks:
+- Run tests on pull requests
+- Cache model downloads
+- Regression-test against fixtures
+- Track calibration metrics
 
 ## Next steps
 
