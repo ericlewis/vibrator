@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from vibrator import InstructionalEncoder, SliderScorer
+from vibrator.utils import seed_everything, friendly_round_features
 from vibrator.synthetic import synthetic_actions, synthetic_item_corpus, synthetic_slider_texts
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
 
     slider_texts = synthetic_slider_texts(limit=3)
@@ -20,7 +22,7 @@ def main() -> None:
     for name, output in scores.items():
         print(f"Slider: {name}")
         print(f"  Probability: {output.probability:.3f}")
-        print(f"  Features: {output.features}")
+        print(f"  Features: {friendly_round_features(output.features)}")
         print()
 
 

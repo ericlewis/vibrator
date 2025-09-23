@@ -9,6 +9,7 @@ from vibrator import (
     SliderScorer,
     sample_recent_chat_actions,
 )
+from vibrator.utils import seed_everything, stable_now, round_floats, friendly_round_features
 
 
 SLIDER_DEFINITIONS = {
@@ -52,6 +53,7 @@ def format_prob(value: float) -> str:
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
     slider_vectors = dict(zip(SLIDER_DEFINITIONS, encoder.encode_items(SLIDER_DEFINITIONS.values())))
 
@@ -61,7 +63,7 @@ def main() -> None:
         feature_overrides_by_segment=FEATURE_OVERRIDES,
     )
 
-    now = datetime.now(timezone.utc)
+    now = stable_now()  # Stable anchor for reproducible recency
     transcript = [
         ChatMessage(
             content="Struggling to keep my maker group motivated, we slip whenever deadlines feel vague.",
@@ -118,7 +120,7 @@ def main() -> None:
         print(
             f"  Strongest slider: {entry['best_slider']} (probability {format_prob(entry['best_probability'])})"
         )
-        print(f"  Feature breakdown: {entry['features']}")
+        print(f"  Feature breakdown: {friendly_round_features(entry['features'])}")
         print()
 
 

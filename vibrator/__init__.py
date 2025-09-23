@@ -23,6 +23,9 @@ __all__ = [
     "sample_recent_chat_actions",
 ]
 
+# Package version
+__version__ = "0.1.0"
+
 
 def __getattr__(name: str):  # pragma: no cover - thin forwarding logic
     if name in {"InstructionalEncoder", "EncoderConfig"}:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from vibrator import InstructionalEncoder, SliderScorer, UserAction
+from vibrator.utils import seed_everything, friendly_round_features
 
 
 SLIDER_DEFINITIONS = {
@@ -12,6 +13,7 @@ SLIDER_DEFINITIONS = {
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
 
     slider_vectors = dict(
@@ -35,7 +37,7 @@ def main() -> None:
         print(f"Slider: {name}")
         print(f"  Raw score: {output.raw_score:.3f}")
         print(f"  Probability: {output.probability:.3f}")
-        print(f"  Features: {output.features}")
+        print(f"  Features: {friendly_round_features(output.features)}")
         print()
 
 

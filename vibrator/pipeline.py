@@ -28,7 +28,8 @@ def _recency_feature(actions: Sequence[UserAction], half_life_hours: float = 12.
 
 
 def _sigmoid(value: float) -> float:
-    return 1.0 / (1.0 + np.exp(-value))
+    # Ensure a native Python float to avoid np.float64 leaking into outputs
+    return float(1.0 / (1.0 + np.exp(-value)))
 
 
 @dataclass

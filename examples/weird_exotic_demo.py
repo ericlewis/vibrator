@@ -9,6 +9,7 @@ from vibrator import (
     SliderScorer,
     sample_recent_chat_actions,
 )
+from vibrator.utils import seed_everything, stable_now, round_floats, friendly_round_features
 
 
 SLIDERS = {
@@ -52,6 +53,7 @@ def cursed_phrase_penalty(actions) -> float:
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
     slider_vectors = dict(zip(SLIDERS, encoder.encode_items(SLIDERS.values())))
     scorer = SliderScorer(
@@ -60,7 +62,7 @@ def main() -> None:
         feature_overrides_by_segment=FEATURE_OVERRIDES,
     )
 
-    now = datetime.now(timezone.utc)
+    now = stable_now()  # Stable anchor for reproducible recency
     transcript = [
         ChatMessage(
             content="Craving karaoke that echoes through the abyss but still offers gluten-free stardust.",
@@ -117,7 +119,7 @@ def main() -> None:
     for entry in ranked:
         print(f"Event: {entry['event']}")
         print(f"  Supreme slider alignment: {entry['strongest']} ({entry['probability']:.3f})")
-        print(f"  Feature breakdown: {entry['feature_breakdown']}")
+        print(f"  Feature breakdown: {friendly_round_features(entry['feature_breakdown'])}")
         print()
 
 

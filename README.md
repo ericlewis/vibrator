@@ -98,17 +98,37 @@ PYTHONPATH=. uv run python examples/mvp.py
 
 ### Try the examples
 
-1. **Basic usage** - See how sliders work with simple actions:
+1. **Vibe Meter (new)** — Visualize per-slider probabilities and feature contributions
+   ```bash
+   uv run python examples/vibe_meter.py
+   # compare contexts
+   uv run python examples/vibe_meter.py --compare
+   ```
+
+2. **Penalty Explainer (new)** — Before/after probabilities with a decayed, targeted penalty
+   ```bash
+   uv run python examples/penalty_explainer.py
+   ```
+
+3. **Align your input (new)** — Type/paste your own text and see its slider vibe and baseline-user score
+   ```bash
+   # quick start with bundled files
+   uv run python examples/align_input.py --text "Async database tuning with Postgres"
+   uv run python examples/align_input.py --text "Karaoke lava surfing" --items-file examples/items.txt
+   uv run python examples/align_input.py --text "Async database tuning with Postgres" --sliders-file examples/sliders.json
+   ```
+
+4. **Basic usage** - See how sliders work with simple actions:
    ```bash
    uv run python examples/mvp.py
    ```
 
-2. **Synthetic data** - Test with auto-generated content:
+4. **Synthetic data** - Test with auto-generated content:
    ```bash
    uv run python examples/synthetic_demo.py
    ```
 
-3. **Your own data** - Integrate with your user actions:
+5. **Your own data** - Integrate with your user actions:
    ```bash
    uv run python examples/integrate_your_data.py
    ```

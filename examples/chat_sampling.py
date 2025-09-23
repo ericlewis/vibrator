@@ -9,6 +9,7 @@ from vibrator import (
     SliderScorer,
     sample_recent_chat_actions,
 )
+from vibrator.utils import seed_everything, stable_now, round_floats, friendly_round_features
 
 
 SLIDER_DEFINITIONS = {
@@ -19,10 +20,11 @@ SLIDER_DEFINITIONS = {
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
     slider_vectors = dict(zip(SLIDER_DEFINITIONS, encoder.encode_items(SLIDER_DEFINITIONS.values())))
 
-    now = datetime.now(timezone.utc)
+    now = stable_now()  # Stable anchor for reproducible recency
     transcript = [
         ChatMessage(
             content="Hey! I'm trying to keep my study group motivated for finals.",
@@ -62,7 +64,7 @@ def main() -> None:
     for name, output in scores.items():
         print(f"Slider: {name}")
         print(f"  Probability: {output.probability:.3f}")
-        print(f"  Features: {output.features}")
+        print(f"  Features: {friendly_round_features(output.features)}")
         print()
 
 

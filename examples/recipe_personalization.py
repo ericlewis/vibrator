@@ -9,6 +9,7 @@ from vibrator import (
     SliderScorer,
     sample_recent_chat_actions,
 )
+from vibrator.utils import seed_everything, stable_now, round_floats
 
 
 SLIDERS = {
@@ -47,6 +48,7 @@ FEATURE_OVERRIDES = {
 
 
 def main() -> None:
+    seed_everything(0)
     encoder = InstructionalEncoder()
     slider_vectors = dict(zip(SLIDERS, encoder.encode_items(SLIDERS.values())))
     scorer = SliderScorer(
@@ -55,7 +57,7 @@ def main() -> None:
         feature_overrides_by_segment=FEATURE_OVERRIDES,
     )
 
-    now = datetime.now(timezone.utc)
+    now = stable_now()  # Stable anchor for reproducible recency
     transcript = [
         ChatMessage(
             content="Need dinner ideas that still feel cozy but no heavy cream please.",
@@ -96,13 +98,14 @@ def main() -> None:
         time_saver = scores["time_saver"].probability
         composite = (macro * 0.35) + (spicy * 0.30) + (comfort * 0.20) + (time_saver * 0.15)
         best_slider, best_output = max(scores.items(), key=lambda item: item[1].probability)
+        rounded_scores = {k: float(round(v.probability, 3)) for k, v in scores.items()}
         ranked_variants.append(
             {
                 "name": variant["name"],
                 "composite": composite,
                 "best_slider": best_slider,
                 "best_probability": best_output.probability,
-                "scores": {k: v.probability for k, v in scores.items()},
+                "scores": rounded_scores,
             }
         )
 

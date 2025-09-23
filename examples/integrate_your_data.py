@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from vibrator import InstructionalEncoder, SliderScorer, UserAction
+from vibrator.utils import stable_now
 
 
 def load_actions_from_csv(csv_path: str) -> List[UserAction]:
@@ -20,13 +21,18 @@ def load_actions_from_csv(csv_path: str) -> List[UserAction]:
     2024-01-15T11:30:00,user123,react,Upvoted debugging tips,0.8
     """
     actions = []
-    now = datetime.now()
+    # Use a stable reference time for reproducibility; override with VIBRATOR_NOW_ISO
+    now = stable_now()
 
     with open(csv_path, 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             # Calculate age in hours for recency decay
-            timestamp = datetime.fromisoformat(row['timestamp'])
+            ts = datetime.fromisoformat(row['timestamp'])
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=datetime.now().astimezone().tzinfo)  # assume local if naive
+            # Convert all to UTC-aware for subtraction
+            timestamp = ts.astimezone(tz=now.tzinfo)
             age_hours = (now - timestamp).total_seconds() / 3600
 
             action = UserAction(
@@ -62,14 +68,18 @@ def load_actions_from_json(json_path: str) -> List[UserAction]:
     }
     """
     actions = []
-    now = datetime.now()
+    # Use a stable reference time for reproducibility; override with VIBRATOR_NOW_ISO
+    now = stable_now()
 
     with open(json_path, 'r') as f:
         data = json.load(f)
 
     for item in data['actions']:
         # Calculate age in hours for recency decay
-        timestamp = datetime.fromisoformat(item['timestamp'])
+        ts = datetime.fromisoformat(item['timestamp'])
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=datetime.now().astimezone().tzinfo)  # assume local if naive
+        timestamp = ts.astimezone(tz=now.tzinfo)
         age_hours = (now - timestamp).total_seconds() / 3600
 
         # Merge provided metadata with calculated fields
