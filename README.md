@@ -86,6 +86,14 @@ Bad (avoid these patterns):
 # Create virtual environment and install dependencies
 uv venv
 uv pip install -r requirements.txt
+
+# Install the local package so `import vibrator` works
+uv pip install -e .
+```
+
+If you prefer not to install the package, you can run examples by temporarily adding the project root to PYTHONPATH:
+```bash
+PYTHONPATH=. uv run python examples/mvp.py
 ```
 
 ### Try the examples
@@ -109,6 +117,30 @@ uv pip install -r requirements.txt
 ```bash
 uv run pytest  # Downloads model on first run
 ```
+
+### First run notes
+- On first use, Sentence Transformers will download the model weights (hkunlp/instructor-base). This requires an internet connection and roughly ~1GB of free disk space.
+- The examples use `uv` to run inside the local virtual environment created by `uv venv`.
+
+### Troubleshooting
+- ModuleNotFoundError: No module named 'vibrator'
+  - Fix: Install the package in editable mode: `uv pip install -e .`
+  - Alternative: Run with the project root on PYTHONPATH: `PYTHONPATH=. uv run python examples/mvp.py`
+- Verify the install
+  ```bash
+  uv run python -c "import vibrator; print(vibrator.__version__ if hasattr(vibrator, '__version__') else 'ok')"
+  ```
+
+### Development setup
+- Packaging: This project uses `pyproject.toml` with the Hatchling backend to package the local `vibrator` module.
+- Editable install for local changes:
+  ```bash
+  uv pip install -e .
+  ```
+- Keep dependencies synced in `requirements.txt`; install with:
+  ```bash
+  uv pip install -r requirements.txt
+  ```
 
 ## Using your own data
 
