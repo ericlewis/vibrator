@@ -38,6 +38,7 @@ class SliderOutput:
     probability: float
     features: Dict[str, float]
     weights: Dict[str, float]
+    relative_probability: float | None = None
 
 
 class SliderScorer:
@@ -50,6 +51,7 @@ class SliderScorer:
         base_feature_weights: Mapping[str, float] | None = None,
         calibrators: Mapping[str, TemperatureCalibrator | IsotonicCalibrator] | None = None,
         feature_overrides_by_segment: Mapping[str, Mapping[str, float]] | None = None,
+        relative_softmax_temperature: float = 1.0,
     ) -> None:
         self.encoder = encoder
         self.slider_vectors = {
@@ -63,6 +65,7 @@ class SliderScorer:
         })
         self.calibrators = calibrators or {}
         self.feature_overrides_by_segment = feature_overrides_by_segment or {}
+        self._relative_tau = float(relative_softmax_temperature)
 
     def _feature_weights(self, context: Mapping[str, object] | None) -> Dict[str, float]:
         weights: Dict[str, float] = dict(self.base_feature_weights)
@@ -120,15 +123,38 @@ class SliderScorer:
 
         weights = self._feature_weights(context)
         outputs: Dict[str, SliderOutput] = {}
+        raw_scores: list[float] = []
+        names: list[str] = []
+        tmp: Dict[str, Dict[str, object]] = {}
         for name, slider_vector in self.slider_vectors.items():
             features = self._compute_features(actions, user_embedding, item_embedding, slider_vector)
             raw_score = sum(weights.get(feature, 0.0) * value for feature, value in features.items())
             probability = self._calibrated_probability(name, raw_score)
+            raw_scores.append(float(raw_score))
+            names.append(name)
+            tmp[name] = {
+                "raw_score": raw_score,
+                "probability": probability,
+                "features": features,
+            }
+        # Compute relative distribution across sliders via softmax over raw scores
+        rel_probs: Dict[str, float] = {}
+        if self._relative_tau > 0.0 and len(raw_scores) > 0:
+            scores_arr = np.asarray(raw_scores, dtype=np.float32)
+            maxv = float(scores_arr.max())
+            exps = np.exp((scores_arr - maxv) / max(self._relative_tau, 1e-6))
+            denom = float(exps.sum())
+            if denom > 0.0:
+                rel = (exps / denom).tolist()
+                rel_probs = {n: float(r) for n, r in zip(names, rel)}
+        # Build outputs
+        for name in names:
             outputs[name] = SliderOutput(
-                raw_score=raw_score,
-                probability=probability,
-                features=features,
+                raw_score=float(tmp[name]["raw_score"]),
+                probability=float(tmp[name]["probability"]),
+                features=tmp[name]["features"],
                 weights=weights,
+                relative_probability=rel_probs.get(name),
             )
         return outputs
 

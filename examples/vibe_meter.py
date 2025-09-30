@@ -32,6 +32,14 @@ def bar(value: float, width: int = 24) -> str:
     return "█" * filled + "░" * (width - filled)
 
 
+def rel_scale(values):
+    mn = min(values)
+    mx = max(values)
+    if mx - mn <= 1e-12:
+        return [0.5 for _ in values], mn, mx
+    return [float((v - mn) / (mx - mn)) for v in values], mn, mx
+
+
 def norm_feature(name: str, val: float) -> float:
     if name in {"user_to_slider", "item_to_slider", "user_item_alignment"}:
         # Cosine-like similarity in [-1,1] -> map to [0,1]
@@ -44,13 +52,26 @@ def print_section(title: str):
     print("-" * len(title))
 
 
-def run(compare: bool) -> None:
+def _print_explainer(compare: bool, contrast: bool, relative: bool) -> None:
+    print("What this shows:")
+    print("- Per-slider probabilities: likelihood this item matches each slider for the baseline context.")
+    if relative:
+        print("- Relative distribution: softmax across sliders for this item (sums to 1), sharper separation.")
+    if compare:
+        print("- Context comparison: change (Δ) if we switch to `after_hours` context.")
+    print("- Feature contributions: why the strongest slider is strong (user/item/slider/recency).")
+    if contrast:
+        print("- Contrast bars: additional group-normalized bars to amplify small differences.")
+    print()
+
+
+def run(compare: bool, contrast: bool, relative: bool, tau: float) -> None:
     seed_everything(0)
     now = stable_now()
 
     encoder = InstructionalEncoder()
     slider_vectors = dict(zip(SLIDERS, encoder.encode_items(SLIDERS.values())))
-    scorer = SliderScorer(encoder, slider_vectors)
+    scorer = SliderScorer(encoder, slider_vectors, relative_softmax_temperature=tau)
 
     # Baseline context
     base_ctx: Mapping[str, object] = {"segment": "work", "is_work_hours": True}
@@ -61,6 +82,7 @@ def run(compare: bool) -> None:
 
     print("Vibe Meter")
     print("==========")
+    _print_explainer(compare, contrast, relative)
 
     # Score baseline
     base_scores = scorer.score(DEFAULT_ACTIONS, base_item, context=base_ctx)
@@ -68,9 +90,21 @@ def run(compare: bool) -> None:
     ranked = sorted(base_scores.items(), key=lambda kv: kv[1].probability, reverse=True)
 
     print_section("Per-slider probabilities (baseline)")
-    for name, output in ranked:
+    probs = [float(out.probability) for _, out in ranked]
+    rels, mn, mx = rel_scale(probs)
+    mean_p = sum(probs) / len(probs) if probs else 0.0
+    for (name, output), rel in zip(ranked, rels):
         p = float(output.probability)
-        print(f"{name:>12}: {bar(p)} {p:.3f}")
+        margin = p - (mean_p * len(probs) - p) / max(len(probs) - 1, 1)  # p - mean(others)
+        rank = 1 + sorted(probs, reverse=True).index(p)
+        line = f"#{rank:<2} {name:>10}: {bar(p)} {p:.3f}"
+        if relative and output.relative_probability is not None:
+            rp = float(output.relative_probability)
+            line += f"  | softmax {bar(rp, 12)} {int(round(rp*100)):>3}%"
+        if contrast:
+            line += f"  | rel {bar(rel, 12)} {int(round(rel*100)):>3}%"
+        line += f"  | margin {margin:+.3f}"
+        print(line)
 
     # Show feature breakdown for strongest slider
     best_name, best_out = ranked[0]
@@ -92,16 +126,19 @@ def run(compare: bool) -> None:
     if compare:
         print_section("Context comparison: baseline vs after_hours")
         alt_scores = scorer.score(DEFAULT_ACTIONS, base_item, context=alt_ctx)
-        for name, _ in ranked:
-            p0 = float(base_scores[name].probability)
-            p1 = float(alt_scores[name].probability)
-            delta = p1 - p0
-            sign = "+" if delta >= 0 else "-"
-            print(f"{name:>12}: {p0:.3f} -> {p1:.3f}  (Δ {sign}{abs(delta):.3f})")
+        deltas = [float(alt_scores[name].probability) - float(base_scores[name].probability) for name, _ in ranked]
+        # Scale deltas to +/- range for visualization
+        reld, _, _ = rel_scale([d + 0.5 for d in deltas])  # shift to [0,1]-ish before scaling
+        for (name, _), d, r in zip(ranked, deltas, reld):
+            sign = "+" if d >= 0 else "-"
+            print(f"{name:>12}: Δ {sign}{abs(d):.3f}  {bar(r, 12)}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--compare", action="store_true", help="Show baseline vs after_hours context diff")
+    ap.add_argument("--contrast", action="store_true", help="Add relative bars normalized within the group")
+    ap.add_argument("--relative", action="store_true", help="Show per-item softmax across sliders (sharper separation)")
+    ap.add_argument("--tau", type=float, default=0.25, help="Softmax temperature across sliders (lower=sharper)")
     args = ap.parse_args()
-    run(compare=args.compare)
+    run(compare=args.compare, contrast=args.contrast, relative=args.relative, tau=args.tau)
